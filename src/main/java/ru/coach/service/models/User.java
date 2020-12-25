@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.List;
 
 /**
  * TODO: .... many-to-many
@@ -36,10 +37,11 @@ public class User {
     @Enumerated(value = EnumType.STRING)// persist аннотация, для маппинга в DB
     private Authority authority;
 
-//    //TODO: таблица аутентификации по token (для REST)
+    //TODO: таблица аутентификации по token (для REST)
     //https://stackoverflow.com/questions/287201/how-to-persist-a-property-of-type-liststring-in-jpa
-//    @ElementCollection// JPA persistence//
-//    @CollectionTable(name = "token", joinColumns = @JoinColumn(name = "user_id"))
-//    @Column(name = "value")
-//    private List<String> tokens;// tokens from User
+    @ElementCollection// JPA persistence//
+    @CollectionTable(name = "token", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "value")
+    @Basic (fetch = FetchType.EAGER)
+    private List<String> tokens;// tokens from User
 }

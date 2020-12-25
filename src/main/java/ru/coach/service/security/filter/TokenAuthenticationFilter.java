@@ -20,8 +20,10 @@ import java.io.IOException;
 
 /**
  * так в SpringBoot вылядит фильтр..
- * его задача в REST - вытащить объект аутентификации и положить в контекст SecurityContextHolder
+ * его задача в REST - вытащить из http объект аутентификации и положить в контекст SecurityContextHolder
  * он (SecurityContextHolder) позволяет работать с   AuthenticationProvider
+ * --------------------------------------------------------------------------------------------------------------------
+ *    Authentication положили в контекст: SecurityContextHolder. чтобы аутентификация была проведена -> вводим Provider
  */
 
 @Component("tokenAuthenticationFilter")
@@ -30,18 +32,19 @@ public class TokenAuthenticationFilter extends GenericFilterBean {// созда�
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        logger.info("servletRequest: " + servletRequest.toString());
+        logger.info("FILTER: " + servletRequest.toString());
         HttpServletRequest request = (HttpServletRequest) servletRequest;
-        String token = request.getHeader("token");
-        logger.info("token is: \"" + servletRequest.toString() + "\"");
+        String token = request.getHeader("token");// REST
+        logger.info("FILTER. token is: \"" + servletRequest.toString() + "\"");
 
         Authentication authentication;
         if (token != null) {
             authentication = new TokenAndPassAuthentication(token);// JwtAuthentication ..
-            logger.info("Authentication: " + authentication.isAuthenticated() + " send to SecurityContextHolder");
+            logger.error("FILTER. Authentication: " + authentication.isAuthenticated() + " send to SecurityContextHolder");
             // закладываем его в  context (для текущего потока). > SecurityContextHolder - контекст, хранит данные по безопасности
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
+
         // TODO: SecurityContext -> предоставляет Auth провайдеру. Провайдер выставляет Auth !!
         // TODO: если AuthenticationProvider сделает seAuth = true, то запрос уйдет в Controller
         filterChain.doFilter(servletRequest, servletResponse);

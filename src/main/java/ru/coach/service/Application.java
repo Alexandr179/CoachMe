@@ -11,7 +11,7 @@ import ru.coach.service.utils.TestDataUtil;
 @SpringBootApplication
 public class Application {
 
-    @Bean
+    @Bean(value = "bcPasswordEncoder")
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }

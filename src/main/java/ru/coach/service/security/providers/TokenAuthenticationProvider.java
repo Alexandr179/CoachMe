@@ -13,19 +13,27 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import ru.coach.service.models.User;
 import ru.coach.service.rerpositories.UserRepository;
 import ru.coach.service.security.authentication.TokenAndPassAuthentication;
 import ru.coach.service.security.details.UserDetailsImpl;
+
 import java.util.Optional;
 
 /**
+ * Authentication положили в контекст: SecurityContextHolder. чтобы аутентификация была проведена -> вводим Provider
  * если провайдер делает setAuthentication() = true; .. то запрос проходит в Controller !!
+ * --------------------------------------------------------------------------------------------------------------------
+ * Provider говорит -> какую !именно аутентификацию он проверяет
  */
 
 @Component
 public class TokenAuthenticationProvider implements AuthenticationProvider {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    public static boolean isRestTokenAuth;
 
     @Autowired
     @Qualifier("customUserDetailsService")// без  @Qualifier 'падаем'!! в реализацию springSecurity..
@@ -34,34 +42,36 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private UserRepository userRepository;
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        logger.info("authenticate(authentication): " + authentication.getName());
-        UserDetails userDetails;
+        logger.info("PROVIDER. authenticate(authentication): " + authentication.getName());
+        UserDetails userDetails = null;
         TokenAndPassAuthentication tokenAndPassAuthentication = (TokenAndPassAuthentication) authentication;
-
         /**
          * если аутентификация по REST-запросу (token in header..) не прошла, должна пройти авторизация (всегда) по html
          */
-
-        //TODO: реализация под REST: header - has token  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        Optional<User> userOptional = null;// = userRepository.findByToken(tokenAndPassAuthentication.getName());
+        //TODO: реализация под REST: header - has token
+        Optional<User> userOptional = userRepository.findByToken(tokenAndPassAuthentication.getName());
         if (userOptional.isPresent()) {
+            isRestTokenAuth = true;
             userDetails = new UserDetailsImpl(userOptional.get());
-            logger.info("userRepository.findByToken(..): " + userDetails.getUsername());
+            logger.info("PROVIDER. userRepository.findByToken(..): " + userDetails.getUsername());
         } else {
-            //TODO: реализация под web: html-form has hidden-token  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            //TODO: реализация под web: html-form has hidden-token
             userDetails = userDetailsService.loadUserByUsername(tokenAndPassAuthentication.getName());
-            logger.info("userDetailsService.loadUserByUsername(..): " + userDetails.getUsername());
+            logger.info("PROVIDER. userDetailsService.loadUserByUsername(..): " + userDetails.getUsername());
+        }
+
+        if (userDetails == null) {
+            throw new UsernameNotFoundException("PROVIDER. User not found");
         }
 
         tokenAndPassAuthentication.setAuthenticated(true);
         tokenAndPassAuthentication.setUserDetails(userDetails);
         return tokenAndPassAuthentication;
-//        throw new UsernameNotFoundException("User not found");
     }
+
 
     @Override// аутентификацию поддерживает (в н.случ. кастомную tokenAndPassAuthentication)
     public boolean supports(Class<?> authClass) {

@@ -9,6 +9,11 @@ import ru.coach.service.models.User;
 import ru.coach.service.rerpositories.UserRepository;
 import java.util.List;
 
+/**
+ * в RESR др.пожход: нет браузера, который создает сесию (JSESSIONID).
+ * подтверждение аутентификации User-ра возможено в запросе через token, передаваемый с header-ом
+  **/
+
 @RestController
 public class RestUsersController {
 

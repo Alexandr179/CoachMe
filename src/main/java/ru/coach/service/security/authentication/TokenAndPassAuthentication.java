@@ -9,16 +9,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+import ru.coach.service.security.details.UserDetailsImpl;
 
 import java.util.Collection;
 
-// ранее в S.Boot мы использовали в Controller-рах :
-// public String getUsersPage(@AuthenticationPrincipal UserDetailsImpl userDetails, Model model){.....
-//       userDetails ->> AuthUser
-// теперь пишем свою реализацию Authentication:
-
-// TODO: ранее User описывался в SpringSecurity помощью UserDetails,
-// TODO: сейчас - как объект аутентификации, с пом. TokenAuthentication..
+/**
+ * в замен стандартной >> Authentication (см.применение в Controller's ..) пишем свою реализацию TokenAndPassAuthentication
+ * Теперь! аутентификация идет-> по token's в header REST запросах
+ */
 
 public class TokenAndPassAuthentication implements Authentication  {// объект аутентификации User-ра
     private Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -30,8 +29,11 @@ public class TokenAndPassAuthentication implements Authentication  {// объе�
 
     public TokenAndPassAuthentication(String token) {
         this.token = token;
-    }// set-теры см.ниже
+    }// ...sett-ры см.ниже
 
+    public TokenAndPassAuthentication() {// нормальная web - аутентификация
+        this.token = token;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -39,12 +41,12 @@ public class TokenAndPassAuthentication implements Authentication  {// объе�
     }
 
     @Override
-    public Object getCredentials() {
+    public Object getCredentials() {// ??????????????????
         return null;
     }
 
     @Override
-    public Object getDetails() {
+    public Object getDetails() {// ?????????????????? userDetails .......
         return null;
     }
 
@@ -56,7 +58,7 @@ public class TokenAndPassAuthentication implements Authentication  {// объе�
 
     @Override
     public boolean isAuthenticated() {
-        logger.info("isAuthenticated(): " + isAuthenticated);
+        logger.info("TokenAndPassAuthentication. isAuthenticated(): " + isAuthenticated);
         return isAuthenticated;
     }
 
@@ -65,12 +67,18 @@ public class TokenAndPassAuthentication implements Authentication  {// объе�
         this.isAuthenticated = isAuth;
     }
 
+    /**
+     * выбор - тип аутентификации..
+     */
     @Override
-    public String getName() {
-        logger.info("token is: " + token + "\"");
-        return token;
+    public String getName() {// TODO: в web-аутентификации ->  return user.getEmail() (in UserDetailsImpl)
+        logger.info("TokenAndPassAuthentication. token is: " + token + "\"");
+        if(token != null){// REST auth
+            return token;
+        } else {
+            return userDetails.getUsername();// нормальная web аутентификация. TODO userDetails уже не null !!!!!!!!
+        }
     }
-
 
 
     public void setToken(String token) {// set-тер на token

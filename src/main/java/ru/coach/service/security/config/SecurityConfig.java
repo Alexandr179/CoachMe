@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import ru.coach.service.security.filter.TokenAuthenticationFilter;
@@ -27,7 +28,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private UserDetailsService userDetailsService;// какой инжектим?.. кастомный или реализацию default-ную. поставим-ка ..@Qualifier)
 
     @Autowired
-    private PasswordEncoder passwordEncoder;//нужно сказать spring-sec. каким passwordEncoder мы пользуемся
+    @Qualifier("bcPasswordEncoder")// см. @Bean in Application
+    private PasswordEncoder passwordEncoder;// (нужно сказать spring-sec. каким passwordEncoder мы пользуемся)
 
     @Autowired
     @Qualifier(value = "dataSource")// это для создания таблицы token-нов для JSESSION по "remember-me"
@@ -46,34 +48,31 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         /**
          * комментим и на page's вводим csrf token-ны. все) в Spring Security заложено по умолчанию csrf
-         */
+         **/
+        /**
+         * можем полностью отключить csrf (csrf().disable()) - на REST
+         **/
 //        http.csrf().disable();
-        // TODO: REST auth..
-        //http.sessionManagement().disable();
+        // TODO: REST auth.. оставляем только то, что разрешаем браузеру
+//        http.sessionManagement().disable();// отключаем на REST сессии..
+//        http.formLogin().disable();
+//        http.logout().disable();
 //        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);// ..иначе, если сессии отключить - 2H DB не законнектится
-//        http.addFilterBefore(tokenAuthenticationFilter, BasicAuthenticationFilter.class);// !не забываем сказать об использовании фильтра
-//        http.authorizeRequests()
-//                .antMatchers("/**").permitAll();
-//                .antMatchers("/users/**").authenticated();// доступно только аутентифицированным (*только ресурс пройдет)
-//                .antMatchers("/disciplines/**").hasAuthority("ADMIN");// проходит только ADMIN (тест... token1,2)
-//        http.headers().frameOptions().disable();// + для работы DB
+        http.addFilterBefore(tokenAuthenticationFilter, BasicAuthenticationFilter.class);// rest.. !!используем фильтр
+//        http.headers().frameOptions().disable();// + для работы DB !если только мы отключили сессии..
 
         // TODO: web auth..
         http.    authorizeRequests()
                 .antMatchers("/signUp").permitAll()// доступно всем
                 .antMatchers("/users").authenticated()// тем, кто прошел форму логина (аутентифицирован)
-
+//                                                 .hasAuthority("ADMIN");
                 .and()
                 .formLogin()
                 .loginPage("/signIn")// страница ВХОДА
                 .usernameParameter("email")// авторизация ..все-таки) идет по полю 'email'
                 .defaultSuccessUrl("/users")// успешная аутентификация
-                .failureUrl("/signIn?error")// ..не пройдена >> на signIn с парам.error по default-ту.
 
-                // не мешает работе SpringBoot реализации....
-                //https://stackoverflow.com/questions/50199266/how-to-handle-session-creation-and-adding-hidden-input-csrf-token-for-any-page-c
-//                .and()// TODO: >> фильтр подхватывает token's из html hidden-полей
-//                .csrf().csrfTokenRepository(new HttpSessionCsrfTokenRepository())
+//                .failureUrl("/signIn?error")// ..не пройдена >> на signIn с парам.error по default-ту.
 
                 /** нужно указать где (в DB) будут хранится rememberMe-token и данные сессии
                     (реализация см. persistentTokenRepository)
@@ -101,10 +100,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     **/
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
 
-        // REST auth..
-//        auth.authenticationProvider(tokenAuthenticationProvider);
+        //REST auth.. используем провайдер
+        if (TokenAuthenticationProvider.isRestTokenAuth) {
+            auth.authenticationProvider(tokenAuthenticationProvider);
+        } else {
+            auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);// web auth..
+        }
     }
 
 

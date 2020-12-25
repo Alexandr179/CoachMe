@@ -5,6 +5,7 @@
 package ru.coach.service.utils;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,10 +13,13 @@ import ru.coach.service.models.Authority;
 import ru.coach.service.models.User;
 import ru.coach.service.rerpositories.UserRepository;
 
+import java.util.Arrays;
+
 @Component
 public class TestDataUtil {
 
     @Autowired
+    @Qualifier("bcPasswordEncoder")
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -30,7 +34,7 @@ public class TestDataUtil {
                 .lastName("U.")
                 .email("user1@gmail.com")
                 .hashPassword(passwordEncoder.encode("qwerty001"))// изменения REST.. с вводом в congig бина passwordEncoder
-//                .tokens(Arrays.asList("token1", "token11"))
+                .tokens(Arrays.asList("token1", "token11"))
                 .authority(Authority.USER)
                 .build();
 
@@ -39,7 +43,7 @@ public class TestDataUtil {
                 .lastName("U.")
                 .email("user2@gmail.com")
                 .hashPassword(passwordEncoder.encode("qwerty002"))// изменения REST.. с вводом в congig бина passwordEncoder
-//                .tokens(Arrays.asList("token2", "token22"))
+                .tokens(Arrays.asList("token2", "token22"))
                 .authority(Authority.USER)
                 .build();
 
@@ -48,7 +52,7 @@ public class TestDataUtil {
                 .lastName("U.")
                 .email("user3@gmail.com")
                 .hashPassword(passwordEncoder.encode("qwerty003"))// изменения REST.. с вводом в congig бина passwordEncoder
-//                .tokens(Arrays.asList("token3", "token33"))
+                .tokens(Arrays.asList("token3", "token33"))
                 .authority(Authority.USER)
                 .build();
 
@@ -57,7 +61,7 @@ public class TestDataUtil {
                 .lastName("A.")
                 .email("admin@gmail.com")
                 .hashPassword(passwordEncoder.encode("qwerty"))// изменения REST.. с вводом в congig бина passwordEncoder
-//                .tokens(Arrays.asList("token0", "token"))
+                .tokens(Arrays.asList("token0", "token"))
                 .authority(Authority.ADMIN)
                 .build();
 

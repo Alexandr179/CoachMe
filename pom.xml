@@ -67,6 +67,25 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+<!-- борьба с lazy.init in user.tokens  -->
+<!-- https://stackoverflow.com/questions/57174306/lazy-fetching-doesnt-work-on-entity-property-in-spring-boot-with-basic-annotat -->
+<!--            <plugin>-->
+<!--                <groupId>org.hibernate.orm.tooling</groupId>-->
+<!--                <artifactId>hibernate-enhance-maven-plugin</artifactId>-->
+<!--                <version>${hibernate.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <configuration>-->
+<!--                            <enableLazyInitialization>true</enableLazyInitialization>-->
+<!--                        </configuration>-->
+<!--                        <goals>-->
+<!--                            <goal>enhance</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+
         </plugins>
     </build>
 </project>
