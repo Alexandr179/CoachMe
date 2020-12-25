@@ -2,5 +2,14 @@
 ### проходит только ADMIN (тест... token1,2)
 ### без .hasAuthority("ADMIN") проходит для token1-..4
 
+GET http://localhost/rest/signin
+headerToken: token
+{
+ "email": "user1@gmail.com",
+ "hashPassword" : "$2a$10$ju73Y1.66BVWlRT7z5BKeePzfTOkTUK./RmUW/dRT2XTCeLwvgyuq"
+}
+
+
+###
 GET http://localhost/rest/users
 token: token1

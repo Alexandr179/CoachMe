@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import ru.coach.service.forms.UserForm;
+import ru.coach.service.security.authentication.TokenAndPassAuthentication;
 import ru.coach.service.services.SignUpService;
 
 @Controller
@@ -21,7 +22,7 @@ public class SignUpController {
     }
 
     @GetMapping("/signUp")
-    public String getSignUpPage(Authentication authentication) {
+    public String getSignUpPage(TokenAndPassAuthentication authentication) {// ищем ошибку
         if (authentication == null) {
             return "sign_up_page";
         } else {

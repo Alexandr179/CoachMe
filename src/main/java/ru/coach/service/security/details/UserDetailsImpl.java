@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
 import ru.coach.service.models.User;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,18 +14,19 @@ import java.util.Collections;
  * изначально Spring Security содержит аутентификацию для одного user-ра
  *  сущность UserDetailsImpl ..описывает наш шаблон аутент.user-ра. UserDetailsImpl подтягивает в аутентификацию системы реального User
  */
-
 public class UserDetailsImpl implements UserDetails {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
 
-    private User user;// ..нет такого бина- user (он не компонент бизнес-логики). поэтому - через констуктор <<
+    private User user;// ..нет такого бина- user (он не компонент бизнес-логики). поэтому - через конструктор
 
     public UserDetailsImpl(User user) {
         this.user = user;
     }
 
-
+    public User getUser() {
+        return user;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {// Granted (разрешение авторизации) по ..User.Authority
@@ -61,11 +63,5 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
-    }
-
-
-
-    public User getUser() {
-        return user;
     }
 }

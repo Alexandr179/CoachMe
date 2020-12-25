@@ -1,5 +1,7 @@
 package ru.coach.service.security.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -7,6 +9,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
@@ -20,19 +23,23 @@ import ru.coach.service.security.providers.TokenAuthenticationProvider;
 
 import javax.sql.DataSource;
 
+import static ru.coach.service.security.providers.TokenAuthenticationProvider.isRestTokenAuth;
+
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
 
     @Autowired// ..уже есть UserDetailsServiceImpl implements UserDetailsService (и есть по умолчанию inMemoryUserDetailsManager)
     @Qualifier("customUserDetailsService")
     private UserDetailsService userDetailsService;// какой инжектим?.. кастомный или реализацию default-ную. поставим-ка ..@Qualifier)
 
     @Autowired
-    @Qualifier("bcPasswordEncoder")// см. @Bean in Application
-    private PasswordEncoder passwordEncoder;// (нужно сказать spring-sec. каким passwordEncoder мы пользуемся)
+    @Qualifier("bcPasswordEncoder")// ... @Bean is in Application
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
-    @Qualifier(value = "dataSource")// это для создания таблицы token-нов для JSESSION по "remember-me"
+    @Qualifier(value = "dataSource")// ... для создания таблицы token-нов для JSESSION по "remember-me"
     private DataSource dataSource;
 
 
@@ -57,9 +64,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //        http.sessionManagement().disable();// отключаем на REST сессии..
 //        http.formLogin().disable();
 //        http.logout().disable();
-//        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);// ..иначе, если сессии отключить - 2H DB не законнектится
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);// ..иначе, если сессии отключить - 2H DB не законнектится
         http.addFilterBefore(tokenAuthenticationFilter, BasicAuthenticationFilter.class);// rest.. !!используем фильтр
-//        http.headers().frameOptions().disable();// + для работы DB !если только мы отключили сессии..
+        http.headers().frameOptions().disable();// + для работы DB !если только мы отключили сессии..
 
         // TODO: web auth..
         http.    authorizeRequests()
@@ -72,7 +79,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .usernameParameter("email")// авторизация ..все-таки) идет по полю 'email'
                 .defaultSuccessUrl("/users")// успешная аутентификация
 
-//                .failureUrl("/signIn?error")// ..не пройдена >> на signIn с парам.error по default-ту.
+                .failureUrl("/signIn?error")// ..не пройдена >> на signIn с парам.error по default-ту.
+
+                // не нужно ??//
+                //https://stackoverflow.com/questions/50199266/how-to-handle-session-creation-and-adding-hidden-input-csrf-token-for-any-page-c
+//                .and()
+//                .csrf().csrfTokenRepository(new HttpSessionCsrfTokenRepository())
 
                 /** нужно указать где (в DB) будут хранится rememberMe-token и данные сессии
                     (реализация см. persistentTokenRepository)
@@ -99,14 +111,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     // закладываем в Spring Security userDetailsService: нашу реализацию сервиса.. завершая конфиг., добавляем в реализацию password
     **/
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-
-        //REST auth.. используем провайдер
-        if (TokenAuthenticationProvider.isRestTokenAuth) {
-            auth.authenticationProvider(tokenAuthenticationProvider);
-        } else {
-            auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);// web auth..
-        }
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {// TODO именно так включаем единственный провайдер
+        logger.error("SECURITY_CONFIG. isRestTokenAuth: " + tokenAuthenticationFilter.isRestTokenAuth);
+        auth.authenticationProvider(tokenAuthenticationProvider);
     }
 
 

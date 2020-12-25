@@ -34,6 +34,8 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public static boolean isRestTokenAuth;
+    private UserDetails userDetails;
+
 
     @Autowired
     @Qualifier("customUserDetailsService")// без  @Qualifier 'падаем'!! в реализацию springSecurity..
@@ -43,10 +45,10 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
     private UserRepository userRepository;
 
 
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        logger.info("PROVIDER. authenticate(authentication): " + authentication.getName());
-        UserDetails userDetails = null;
+        logger.error("PROVIDER.>>>> must authenticate(authentication): " + authentication.getName());
         TokenAndPassAuthentication tokenAndPassAuthentication = (TokenAndPassAuthentication) authentication;
         /**
          * если аутентификация по REST-запросу (token in header..) не прошла, должна пройти авторизация (всегда) по html
@@ -56,19 +58,19 @@ public class TokenAuthenticationProvider implements AuthenticationProvider {
         if (userOptional.isPresent()) {
             isRestTokenAuth = true;
             userDetails = new UserDetailsImpl(userOptional.get());
-            logger.info("PROVIDER. userRepository.findByToken(..): " + userDetails.getUsername());
+            logger.warn("PROVIDER. userRepository.findByToken(..): " + userDetails.getUsername());
         } else {
             //TODO: реализация под web: html-form has hidden-token
             userDetails = userDetailsService.loadUserByUsername(tokenAndPassAuthentication.getName());
-            logger.info("PROVIDER. userDetailsService.loadUserByUsername(..): " + userDetails.getUsername());
+            logger.warn("PROVIDER. userDetailsService.loadUserByUsername(..): " + userDetails.getUsername());
         }
+
+        tokenAndPassAuthentication.setAuthenticated(true);
+        tokenAndPassAuthentication.setUserDetails((UserDetailsImpl) userDetails);// ищем ошибку скастили.. к UserDetailsImpl
 
         if (userDetails == null) {
             throw new UsernameNotFoundException("PROVIDER. User not found");
         }
-
-        tokenAndPassAuthentication.setAuthenticated(true);
-        tokenAndPassAuthentication.setUserDetails(userDetails);
         return tokenAndPassAuthentication;
     }
 

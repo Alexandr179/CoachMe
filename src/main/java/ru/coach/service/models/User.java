@@ -42,6 +42,6 @@ public class User {
     @ElementCollection// JPA persistence//
     @CollectionTable(name = "token", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "value")
-    @Basic (fetch = FetchType.EAGER)
+//    @Basic(fetch = FetchType.EAGER)// борьба...
     private List<String> tokens;// tokens from User
 }

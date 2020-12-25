@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
 import ru.coach.service.security.details.UserDetailsImpl;
 
 import java.util.Collection;
@@ -19,20 +17,17 @@ import java.util.Collection;
  * Теперь! аутентификация идет-> по token's в header REST запросах
  */
 
-public class TokenAndPassAuthentication implements Authentication  {// объект аутентификации User-ра
+public class TokenAndPassAuthentication implements Authentication {// объект аутентификации User-ра
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private UserDetails userDetails;
-    private String token;
-    private Boolean isAuthenticated = false;
+    private UserDetailsImpl userDetails;
+    private String headerToken;
+    private boolean isAuthenticated = false;
 
-
-    public TokenAndPassAuthentication(String token) {
-        this.token = token;
-    }// ...sett-ры см.ниже
-
-    public TokenAndPassAuthentication() {// нормальная web - аутентификация
-        this.token = token;
+    public TokenAndPassAuthentication(String headerToken) {
+        this.headerToken = headerToken;
+    }
+    public TokenAndPassAuthentication() {
     }
 
     @Override
@@ -46,19 +41,17 @@ public class TokenAndPassAuthentication implements Authentication  {// объе�
     }
 
     @Override
-    public Object getDetails() {// ?????????????????? userDetails .......
+    public Object getDetails() {// ?????????????????? нужно ли ,,
         return null;
     }
 
     @Override
     public Object getPrincipal() {
-        logger.info("getPrincipal() -> UserDetails: Username {" + userDetails.getUsername() + "}, Password{" + userDetails.getPassword());
         return userDetails;
     }
 
     @Override
     public boolean isAuthenticated() {
-        logger.info("TokenAndPassAuthentication. isAuthenticated(): " + isAuthenticated);
         return isAuthenticated;
     }
 
@@ -67,25 +60,25 @@ public class TokenAndPassAuthentication implements Authentication  {// объе�
         this.isAuthenticated = isAuth;
     }
 
-    /**
-     * выбор - тип аутентификации..
-     */
     @Override
-    public String getName() {// TODO: в web-аутентификации ->  return user.getEmail() (in UserDetailsImpl)
-        logger.info("TokenAndPassAuthentication. token is: " + token + "\"");
-        if(token != null){// REST auth
-            return token;
-        } else {
-            return userDetails.getUsername();// нормальная web аутентификация. TODO userDetails уже не null !!!!!!!!
+    public String getName() {
+        logger.warn("AUTHENTICATION. Token is: \"" + headerToken + "\"");
+        if (headerToken == null) {
+            headerToken = "token";// TODO аутентификация по web -> принудительно выставляем пока нужный token
         }
+        return headerToken;
     }
 
 
-    public void setToken(String token) {// set-тер на token
-        this.token = token;
+    public void setToken(String headerToken) {// set-тер на token
+        logger.warn("AUTHENTICATION. setToken(): \"" + headerToken + "\"");
+        if (headerToken == null) {
+            headerToken = "token";// TODO аутентификация по web -> принудительно выставляем пока нужный token
+        }
+        this.headerToken = headerToken;
     }
 
-    public void setUserDetails(UserDetails userDetails) {
+    public void setUserDetails(UserDetailsImpl userDetails) {// ищем ошибку замена на UserDetailsImpl
         this.userDetails = userDetails;
     }
 }
