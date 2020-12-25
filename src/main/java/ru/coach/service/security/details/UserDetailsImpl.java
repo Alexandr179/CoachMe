@@ -10,12 +10,13 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * описание сущности для авторизации. Spring -> знает как работать с UserDetails пользователя..
- *  Achtung!! Содержит 'между прочим' User..
+ * изначально Spring Security содержит аутентификацию для одного user-ра
+ *  сущность UserDetailsImpl ..описывает наш шаблон аутент.user-ра. UserDetailsImpl подтягивает в аутентификацию системы реального User
  */
 
 public class UserDetailsImpl implements UserDetails {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
+
 
     private User user;// ..нет такого бина- user (он не компонент бизнес-логики). поэтому - через констуктор <<
 
@@ -23,15 +24,12 @@ public class UserDetailsImpl implements UserDetails {
         this.user = user;
     }
 
-    public User getUser() {
-        return user;
-    }
-
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {// Granted (разрешение авторизации) по ..User.Authority
         logger.info("getAuthorities(): " + Collections.singletonList(new SimpleGrantedAuthority(user.getAuthority().name())));
+
         return Collections.singletonList(new SimpleGrantedAuthority(user.getAuthority().name()));
     }
 
@@ -41,7 +39,7 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     @Override
-    public String getUsername() {
+    public String getUsername() {// реализация по  ..email
         return user.getEmail();
     }
 
@@ -63,5 +61,11 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+
+
+    public User getUser() {
+        return user;
     }
 }

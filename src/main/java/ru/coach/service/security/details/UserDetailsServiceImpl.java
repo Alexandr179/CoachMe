@@ -11,8 +11,7 @@ import ru.coach.service.rerpositories.UserRepository;
 import ru.coach.service.models.User;
 
 /**
- * для получения из DB (по email и password)  ..обычный сервис, просто зашитый в Spring
- *          Получаем   -> UserDetails c пользователем из DB
+ * для получения AuthUser из DB (сервис нужен для дополнения реализации UserDetails ..)
  */
 
 @Service(value = "customUserDetailsService")
@@ -25,6 +24,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email).orElseThrow(() -> {throw new UsernameNotFoundException("User not found");});
+
         logger.info("loadUserByUsername(): " + user.getEmail());
         return new UserDetailsImpl(user);
     }

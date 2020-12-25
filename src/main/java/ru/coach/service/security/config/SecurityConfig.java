@@ -34,7 +34,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private DataSource dataSource;
 
 
-
+    // REST ..
     @Autowired
     private TokenAuthenticationFilter tokenAuthenticationFilter;
     @Autowired
@@ -44,8 +44,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     protected void configure(HttpSecurity http) throws Exception {
-//        http.csrf().disable();//  описываем ниже  csrf() закомментили в SpringBoot
-
+        /**
+         * комментим и на page's вводим csrf token-ны. все) в Spring Security заложено по умолчанию csrf
+         */
+//        http.csrf().disable();
         // TODO: REST auth..
         //http.sessionManagement().disable();
 //        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);// ..иначе, если сессии отключить - 2H DB не законнектится
@@ -70,9 +72,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
                 // не мешает работе SpringBoot реализации....
                 //https://stackoverflow.com/questions/50199266/how-to-handle-session-creation-and-adding-hidden-input-csrf-token-for-any-page-c
-                .and()// TODO: >> фильтр подхватывает token's из html hidden-полей
-                .csrf().csrfTokenRepository(new HttpSessionCsrfTokenRepository())
+//                .and()// TODO: >> фильтр подхватывает token's из html hidden-полей
+//                .csrf().csrfTokenRepository(new HttpSessionCsrfTokenRepository())
 
+                /** нужно указать где (в DB) будут хранится rememberMe-token и данные сессии
+                    (реализация см. persistentTokenRepository)
+                 не забываем для не обновления таблицы указывать property: spring.datasource.initialization-mode=always**/
                 .and()
 //                .rememberMe().alwaysRemember(true)
                 .rememberMe().rememberMeParameter("remember-me")// система запоминает сессию user-ра
@@ -85,16 +90,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //                .logoutUrl("/logout") ..нововведения. см.ниже:
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                 .logoutSuccessUrl("/signIn")
-
                 .deleteCookies("remember-me", "JSESSIONID")// "remember-me", ..когда используем "remember-me",
                 .invalidateHttpSession(true)// ..и завершает сессию user-ра
         ;
     }
 
 
-    @Override// пользуемся Нашим Service -> ..userDetailsService
+    /** пользуемся нашим Service (..userDetailsService)
+    // закладываем в Spring Security userDetailsService: нашу реализацию сервиса.. завершая конфиг., добавляем в реализацию password
+    **/
+    @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        // web auth..
         auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
 
         // REST auth..
@@ -102,7 +108,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
 
-    // web auth..
+    /** хранение rememberMe-token и данных сессии User-ра **/
     @Bean// запоминает JSESSION того user-а, кто нажал галку)
     public PersistentTokenRepository persistentTokenRepository(){// сохраняет token's.. для "remember-me" параметра
          JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();// создает таблицу.. persistent_logins
