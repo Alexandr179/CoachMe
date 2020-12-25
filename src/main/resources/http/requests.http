@@ -1,0 +1,6 @@
+
+### проходит только ADMIN (тест... token1,2)
+### без .hasAuthority("ADMIN") проходит для token1-..4
+
+GET http://localhost/rest/users
+token: token1
