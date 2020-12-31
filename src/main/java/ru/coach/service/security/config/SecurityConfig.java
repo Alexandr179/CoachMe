@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -15,114 +17,89 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import ru.coach.service.security.filter.TokenAuthenticationFilter;
-import ru.coach.service.security.providers.TokenAuthenticationProvider;
-
-
+import ru.coach.service.security.filter.TokenOrNameAuthFilter;
+import ru.coach.service.security.providers.TokenOrNameAuthProvider;
 import javax.sql.DataSource;
 
-import static ru.coach.service.security.providers.TokenAuthenticationProvider.isRestTokenAuth;
-
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+@Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
 
-    @Autowired// ..уже есть UserDetailsServiceImpl implements UserDetailsService (и есть по умолчанию inMemoryUserDetailsManager)
+    @Autowired
     @Qualifier("customUserDetailsService")
-    private UserDetailsService userDetailsService;// какой инжектим?.. кастомный или реализацию default-ную. поставим-ка ..@Qualifier)
+    private UserDetailsService userDetailsService;
 
     @Autowired
-    @Qualifier("bcPasswordEncoder")// ... @Bean is in Application
+    @Qualifier("bcPasswordEncoder")
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    @Qualifier(value = "dataSource")// ... для создания таблицы token-нов для JSESSION по "remember-me"
+    @Qualifier(value = "dataSource")
     private DataSource dataSource;
 
 
-    // REST ..
     @Autowired
-    private TokenAuthenticationFilter tokenAuthenticationFilter;
+    private TokenOrNameAuthFilter tokenOrNameAuthFilter;
     @Autowired
-    private TokenAuthenticationProvider tokenAuthenticationProvider;
-
+    private TokenOrNameAuthProvider tokenOrNameAuthProvider;
 
 
     @Autowired
     protected void configure(HttpSecurity http) throws Exception {
-        /**
-         * комментим и на page's вводим csrf token-ны. все) в Spring Security заложено по умолчанию csrf
-         **/
-        /**
-         * можем полностью отключить csrf (csrf().disable()) - на REST
-         **/
 //        http.csrf().disable();
-        // TODO: REST auth.. оставляем только то, что разрешаем браузеру
-//        http.sessionManagement().disable();// отключаем на REST сессии..
+//        http.sessionManagement().disable();
 //        http.formLogin().disable();
 //        http.logout().disable();
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);// ..иначе, если сессии отключить - 2H DB не законнектится
-        http.addFilterBefore(tokenAuthenticationFilter, BasicAuthenticationFilter.class);// rest.. !!используем фильтр
-        http.headers().frameOptions().disable();// + для работы DB !если только мы отключили сессии..
 
-        // TODO: web auth..
-        http.    authorizeRequests()
-                .antMatchers("/signUp").permitAll()// доступно всем
-                .antMatchers("/users").authenticated()// тем, кто прошел форму логина (аутентифицирован)
-//                                                 .hasAuthority("ADMIN");
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        http.addFilterBefore(tokenOrNameAuthFilter, BasicAuthenticationFilter.class);
+        http.headers().frameOptions().disable();
+
+        http.authorizeRequests()
+                .antMatchers("/signUp").permitAll()
+                .antMatchers("/users").authenticated()
+
                 .and()
                 .formLogin()
-                .loginPage("/signIn")// страница ВХОДА
-                .usernameParameter("email")// авторизация ..все-таки) идет по полю 'email'
-                .defaultSuccessUrl("/users")// успешная аутентификация
+                .loginPage("/signIn")
+                .usernameParameter("email")
+                .defaultSuccessUrl("/users")
 
-                .failureUrl("/signIn?error")// ..не пройдена >> на signIn с парам.error по default-ту.
+                .failureUrl("/signIn?error")
 
-                // не нужно ??//
                 //https://stackoverflow.com/questions/50199266/how-to-handle-session-creation-and-adding-hidden-input-csrf-token-for-any-page-c
 //                .and()
 //                .csrf().csrfTokenRepository(new HttpSessionCsrfTokenRepository())
 
-                /** нужно указать где (в DB) будут хранится rememberMe-token и данные сессии
-                    (реализация см. persistentTokenRepository)
-                 не забываем для не обновления таблицы указывать property: spring.datasource.initialization-mode=always**/
                 .and()
 //                .rememberMe().alwaysRemember(true)
-                .rememberMe().rememberMeParameter("remember-me")// система запоминает сессию user-ра
-                .tokenRepository(persistentTokenRepository())// создаем для этого token-репозиторий (см.ниже в security config ..@been)
-                // работает с таблицей DB persistent_logins
-                .tokenValiditySeconds(365 * 24 * 60 * 60)// столько будет валиден token (будет храниться сессия)
+                .rememberMe().rememberMeParameter("remember-me")
+                .tokenRepository(persistentTokenRepository())
+                .tokenValiditySeconds(365 * 24 * 60 * 60)
 
                 .and()
                 .logout()
-//                .logoutUrl("/logout") ..нововведения. см.ниже:
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                 .logoutSuccessUrl("/signIn")
-                .deleteCookies("remember-me", "JSESSIONID")// "remember-me", ..когда используем "remember-me",
-                .invalidateHttpSession(true)// ..и завершает сессию user-ра
+                .deleteCookies("remember-me", "JSESSIONID")
+                .invalidateHttpSession(true)
         ;
     }
 
-
-    /** пользуемся нашим Service (..userDetailsService)
-    // закладываем в Spring Security userDetailsService: нашу реализацию сервиса.. завершая конфиг., добавляем в реализацию password
-    **/
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {// TODO именно так включаем единственный провайдер
-        logger.error("SECURITY_CONFIG. isRestTokenAuth: " + tokenAuthenticationFilter.isRestTokenAuth);
-        auth.authenticationProvider(tokenAuthenticationProvider);
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(tokenOrNameAuthProvider);
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
     }
 
 
-    /** хранение rememberMe-token и данных сессии User-ра **/
-    @Bean// запоминает JSESSION того user-а, кто нажал галку)
-    public PersistentTokenRepository persistentTokenRepository(){// сохраняет token's.. для "remember-me" параметра
-         JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();// создает таблицу.. persistent_logins
-                                                            //  (тк. в app.prop  ..spring.datasource.initialization-mode=always)
-                                                           // когда в app.properties есть: spring.datasource.initialization-mode=always
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository() {
+        JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
         jdbcTokenRepository.setDataSource(dataSource);
         return jdbcTokenRepository;
     }

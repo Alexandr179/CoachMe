@@ -9,7 +9,6 @@ import javax.persistence.*;
 import java.util.List;
 
 /**
- * TODO: .... many-to-many
  * https://dzone.com/tutorials/java/hibernate/hibernate-example/hibernate-mapping-many-to-many-1.html
  */
 
@@ -42,6 +41,5 @@ public class User {
     @ElementCollection// JPA persistence//
     @CollectionTable(name = "token", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "value")
-//    @Basic(fetch = FetchType.EAGER)// борьба...
-    private List<String> tokens;// tokens from User
+    private List<String> tokens;
 }

@@ -2,7 +2,7 @@ package ru.coach.service.forms;
 
 import lombok.Data;
 
-@Data// ---------------------------->> get-теры, set-теры....
+@Data
 public class UserForm {
     private String email;
     private String firstName;

@@ -17,12 +17,9 @@ public class UsersController {
     @Autowired
     private UserRepository userRepository;
 
-    /** аннтот.@AuthenticationPrincipal можем сразу получать ->  UserDetailsImpl **/
-    /** не забываем в  UserDetailsImpl gett-тер на User **/
-
     @GetMapping("/users")
     public String getUsersPage(@AuthenticationPrincipal UserDetailsImpl userDetails, Model model){
-        logger.error("NOW Authenticated User is: " + userDetails.getUser());// знаем какой юзер в данн.момент.. в приложении
+//        logger.warn("UsersCONTROLLER -> AuthUser: " + userDetails.getUser());
 
         model.addAttribute("users", userRepository.findAll());
         return "users_page";

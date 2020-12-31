@@ -26,14 +26,14 @@ public class TestDataUtil {
     private UserRepository userRepository;
 
 
-    @Transactional// spring-овая (не persist..)
+    @Transactional
     public void initializeData() {
 
         User user1 = User.builder()
                 .firstName("User1")
                 .lastName("U.")
                 .email("user1@gmail.com")
-                .hashPassword(passwordEncoder.encode("qwerty001"))// изменения REST.. с вводом в congig бина passwordEncoder
+                .hashPassword(passwordEncoder.encode("qwerty001"))
                 .tokens(Arrays.asList("token1", "token11"))
                 .authority(Authority.USER)
                 .build();
@@ -42,7 +42,7 @@ public class TestDataUtil {
                 .firstName("User2")
                 .lastName("U.")
                 .email("user2@gmail.com")
-                .hashPassword(passwordEncoder.encode("qwerty002"))// изменения REST.. с вводом в congig бина passwordEncoder
+                .hashPassword(passwordEncoder.encode("qwerty002"))
                 .tokens(Arrays.asList("token2", "token22"))
                 .authority(Authority.USER)
                 .build();
@@ -51,7 +51,7 @@ public class TestDataUtil {
                 .firstName("User3")
                 .lastName("U.")
                 .email("user3@gmail.com")
-                .hashPassword(passwordEncoder.encode("qwerty003"))// изменения REST.. с вводом в congig бина passwordEncoder
+                .hashPassword(passwordEncoder.encode("qwerty003"))
                 .tokens(Arrays.asList("token3", "token33"))
                 .authority(Authority.USER)
                 .build();
@@ -60,7 +60,7 @@ public class TestDataUtil {
                 .firstName("Admin")
                 .lastName("A.")
                 .email("admin@gmail.com")
-                .hashPassword(passwordEncoder.encode("qwerty"))// изменения REST.. с вводом в congig бина passwordEncoder
+                .hashPassword(passwordEncoder.encode("qwerty"))
                 .tokens(Arrays.asList("token0", "token"))
                 .authority(Authority.ADMIN)
                 .build();

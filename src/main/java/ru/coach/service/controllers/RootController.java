@@ -1,21 +1,20 @@
 package ru.coach.service.controllers;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import ru.coach.service.security.authentication.TokenAndPassAuthentication;
+import ru.coach.service.security.authentication.TokenOrNameAuthentication;
 
 @Controller
 @RequestMapping("/")
 public class RootController {
 
-    @Value("${application.root.redirect}")// application.properties
+    @Value("${application.root.redirect}")
     private String redirectUrl;
 
     @GetMapping
-    public String getRootPage(TokenAndPassAuthentication authentication){// ищем ошибку
+    public String getRootPage(TokenOrNameAuthentication authentication){
         if (authentication == null) {
             return "redirect:/signIn";
         } else {

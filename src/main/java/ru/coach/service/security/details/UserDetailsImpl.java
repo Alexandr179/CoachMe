@@ -10,15 +10,9 @@ import ru.coach.service.models.User;
 import java.util.Collection;
 import java.util.Collections;
 
-/**
- * изначально Spring Security содержит аутентификацию для одного user-ра
- *  сущность UserDetailsImpl ..описывает наш шаблон аутент.user-ра. UserDetailsImpl подтягивает в аутентификацию системы реального User
- */
 public class UserDetailsImpl implements UserDetails {
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
-
-
-    private User user;// ..нет такого бина- user (он не компонент бизнес-логики). поэтому - через конструктор
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final User user;
 
     public UserDetailsImpl(User user) {
         this.user = user;
@@ -29,9 +23,8 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {// Granted (разрешение авторизации) по ..User.Authority
-        logger.info("getAuthorities(): " + Collections.singletonList(new SimpleGrantedAuthority(user.getAuthority().name())));
-
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        logger.info("USER_DETAILS. getAuthorities(): " + Collections.singletonList(new SimpleGrantedAuthority(user.getAuthority().name())));
         return Collections.singletonList(new SimpleGrantedAuthority(user.getAuthority().name()));
     }
 
@@ -41,7 +34,7 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     @Override
-    public String getUsername() {// реализация по  ..email
+    public String getUsername() {
         return user.getEmail();
     }
 

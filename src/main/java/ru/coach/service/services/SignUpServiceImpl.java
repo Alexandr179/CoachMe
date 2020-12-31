@@ -15,7 +15,7 @@ public class SignUpServiceImpl implements SignUpService {
     private UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;// технология 'bCrypt' spring-security, его бинн -> в конфиге(Application)
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public void signUp(UserForm userForm) {
